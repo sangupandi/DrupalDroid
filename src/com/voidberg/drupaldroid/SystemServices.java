@@ -1,6 +1,6 @@
 package com.voidberg.drupaldroid;
 
-import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.HttpResponseHandler;
 import org.json.JSONObject;
 
 public class SystemServices {
@@ -10,7 +10,7 @@ public class SystemServices {
         client = c;
     }
 
-    public void connect(AsyncHttpResponseHandler responseHandler) {
+    public void connect(HttpResponseHandler responseHandler) {
         client.post("system/connect", new JSONObject(), responseHandler);
     }
 }

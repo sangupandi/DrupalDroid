@@ -2,7 +2,7 @@ package com.voidberg.drupaldroid;
 
 import android.util.Log;
 import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.HttpResponseHandler;
 import com.loopj.android.http.PersistentCookieStore;
 import com.loopj.android.http.RequestParams;
 import org.apache.http.entity.StringEntity;
@@ -52,20 +52,20 @@ public class ServicesClient {
       return this.rootUrl + relativeUrl;
     }
 
-    public void getRoot(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
+    public void getRoot(String url, RequestParams params, HttpResponseHandler responseHandler) {
       client.get(getAbsoluteRootUrl(url), params, responseHandler);
     }
 
-    public void get(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
+    public void get(String url, RequestParams params, HttpResponseHandler responseHandler) {
         client.get(getAbsoluteUrl(url), params, responseHandler);
     }
 
-    public void post(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
+    public void post(String url, RequestParams params, HttpResponseHandler responseHandler) {
         this.setHeaders();
         client.post(getAbsoluteUrl(url), params, responseHandler);
     }
 
-    public void post(String url, JSONObject params, AsyncHttpResponseHandler responseHandler) {
+    public void post(String url, JSONObject params, HttpResponseHandler responseHandler) {
         this.setHeaders();
         StringEntity se = null;
         try {
@@ -78,12 +78,12 @@ public class ServicesClient {
         client.post(null, getAbsoluteUrl(url), se, "application/json", responseHandler);
     }
 
-    public void put(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
+    public void put(String url, RequestParams params, HttpResponseHandler responseHandler) {
         this.setHeaders();
         client.put(getAbsoluteUrl(url), params, responseHandler);
     }
 
-    public void put(String url, JSONObject params, AsyncHttpResponseHandler responseHandler) {
+    public void put(String url, JSONObject params, HttpResponseHandler responseHandler) {
         this.setHeaders();
         StringEntity se = null;
         try {
@@ -96,7 +96,7 @@ public class ServicesClient {
         client.put(null, getAbsoluteUrl(url), se, "application/json", responseHandler);
     }
     
-    public void getToken(AsyncHttpResponseHandler responseHandler) {
+    public void getToken(HttpResponseHandler responseHandler) {
       this.getRoot("services/session/token", new RequestParams(), responseHandler);
     }
 }
