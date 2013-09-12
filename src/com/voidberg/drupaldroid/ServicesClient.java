@@ -1,10 +1,14 @@
 package com.voidberg.drupaldroid;
 
 import android.util.Log;
+
 import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.HttpResponseHandler;
 import com.loopj.android.http.PersistentCookieStore;
 import com.loopj.android.http.RequestParams;
+import com.loopj.android.http.SyncHttpResponseHandler;
+
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
@@ -15,29 +19,13 @@ import java.io.*;
 public class ServicesClient {
     private String url;
     private String rootUrl;
-    private String token;
 
     public static AsyncHttpClient client = new AsyncHttpClient();
 
     public ServicesClient(String server, String base) {
         this.url = server + '/' + base + '/';
         this.rootUrl = server + '/';
-        this.token = "";
         client.setTimeout(60000);
-    }
-
-    public String getToken() {
-      return token;
-    }
-
-    public void setToken(String token) {
-      this.token = token;
-    }
-
-    private void setHeaders() {
-      if (!token.equals("")) {
-        client.addHeader("X-CSRF-Token", token);
-      }
     }
 
     public void setCookieStore(PersistentCookieStore cookieStore) {
@@ -52,21 +40,25 @@ public class ServicesClient {
       return this.rootUrl + relativeUrl;
     }
 
-    public void getRoot(String url, RequestParams params, HttpResponseHandler responseHandler) {
-      client.get(getAbsoluteRootUrl(url), params, responseHandler);
+    public void get(final String url, final RequestParams params, final HttpResponseHandler responseHandler) {
+        new TokenHandler(responseHandler instanceof AsyncHttpResponseHandler){
+        	@Override
+        	public void onFinish(){
+        		client.get(getAbsoluteUrl(url), params,  responseHandler);
+        	}
+        };
     }
 
-    public void get(String url, RequestParams params, HttpResponseHandler responseHandler) {
-        client.get(getAbsoluteUrl(url), params, responseHandler);
-    }
-
-    public void post(String url, RequestParams params, HttpResponseHandler responseHandler) {
-        this.setHeaders();
-        client.post(getAbsoluteUrl(url), params, responseHandler);
+    public void post(final String url, final RequestParams params, final HttpResponseHandler responseHandler) {
+        new TokenHandler(responseHandler instanceof AsyncHttpResponseHandler){
+        	@Override
+        	public void onFinish(){
+        		client.post(getAbsoluteUrl(url), params,  responseHandler);
+        	}
+        };
     }
 
     public void post(String url, JSONObject params, HttpResponseHandler responseHandler) {
-        this.setHeaders();
         StringEntity se = null;
         try {
             se = new StringEntity(params.toString(), HTTP.UTF_8);
@@ -75,16 +67,27 @@ public class ServicesClient {
         }
         se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
-        client.post(null, getAbsoluteUrl(url), se, "application/json", responseHandler);
+        final String _url = url;
+        final StringEntity _se = se;
+        final HttpResponseHandler _responseHandler = responseHandler;
+        new TokenHandler(responseHandler instanceof AsyncHttpResponseHandler){
+        	@Override
+        	public void onFinish(){
+        		client.post(null, getAbsoluteUrl(_url), _se, "application/json", _responseHandler);
+        	}
+        };
     }
 
-    public void put(String url, RequestParams params, HttpResponseHandler responseHandler) {
-        this.setHeaders();
-        client.put(getAbsoluteUrl(url), params, responseHandler);
+    public void put(final String url, final RequestParams params, final HttpResponseHandler responseHandler) {
+        new TokenHandler(responseHandler instanceof AsyncHttpResponseHandler){
+        	@Override
+        	public void onFinish(){
+        		client.put(getAbsoluteUrl(url), params,  responseHandler);
+        	}
+        };
     }
 
     public void put(String url, JSONObject params, HttpResponseHandler responseHandler) {
-        this.setHeaders();
         StringEntity se = null;
         try {
             se = new StringEntity(params.toString(), HTTP.UTF_8);
@@ -92,11 +95,58 @@ public class ServicesClient {
             e.printStackTrace();
         }
         se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        client.put(null, getAbsoluteUrl(url), se, "application/json", responseHandler);
+        
+        final String _url = url;
+        final StringEntity _se = se;
+        final HttpResponseHandler _responseHandler = responseHandler;
+        new TokenHandler(responseHandler instanceof AsyncHttpResponseHandler){
+        	@Override
+        	public void onFinish(){
+        		client.put(null, getAbsoluteUrl(_url), _se, "application/json", _responseHandler);
+        	}
+        };
     }
     
-    public void getToken(HttpResponseHandler responseHandler) {
-      this.getRoot("services/session/token", new RequestParams(), responseHandler);
+    class TokenHandler{
+    	final String TAG = this.getClass().getName();
+    	public TokenHandler(boolean async){
+    		HttpResponseHandler responseHandler;
+    		if (async){
+    			responseHandler = new AsyncHttpResponseHandler(){
+    				@Override
+    				public void onSuccess(String response){
+    					addHeader(response);
+    				}
+    				
+    				@Override
+    				public void onFinish(){
+    					TokenHandler.this.onFinish();
+    				}
+    			};
+    		}else{
+    			responseHandler = new SyncHttpResponseHandler(){
+    				@Override
+    				public void onSuccess(String response){
+    					addHeader(response);
+    				}
+                    
+    				@Override
+    				public void onFinish(){
+    					TokenHandler.this.onFinish();
+    				}
+    			};
+    		}
+    		
+    		client.get(null, getAbsoluteRootUrl("/services/session/token"), responseHandler);
+    	}
+    	
+    	public void onFinish(){
+    		
+    	}
+    	
+		private void addHeader(String response) {
+			client.removeHeader("X-CSRF-Token");
+			client.addHeader("X-CSRF-Token", response);
+		}
     }
 }
